@@ -1,0 +1,72 @@
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.lang.reflect.AccessibleObject;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+public class Selenium_55_Zadanie_Gesty {
+    WebDriver driver;
+    String URL = "http://fakestore.testelka.pl/actions/";
+    WebDriverWait wait;
+    Actions actions;
+
+    @BeforeEach
+    public void driverSetup() {
+        System.setProperty("webdriver.chrome.driver", "src/main/resources/chromedriver.exe");
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
+        driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+        wait = new WebDriverWait(driver, 5);
+        driver.navigate().to(URL);
+        actions = new Actions(driver);
+    }
+    @AfterEach
+    public void driverQuit(){
+        driver.close();
+        driver.quit();
+    }
+    @Test
+    public void gestureTest1(){
+        WebElement menu = driver.findElement(By.cssSelector("a#menu-link"));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", menu);
+        WebElement menuBasket = driver.findElement(By.cssSelector(".menu-cart"));
+        actions.contextClick(menu).click(menuBasket).build().perform();
+        String basket = driver.findElement(By.cssSelector("h1.entry-title")).getText();
+        Assertions.assertEquals("Koszyk",basket, "Actions did not take user to \"basket\" section");
+    }
+    @Test
+    public void gestureTest2(){
+        WebElement doubleClickColor = driver.findElement(By.cssSelector("div#double-click"));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", doubleClickColor);
+        actions.doubleClick(doubleClickColor).build().perform();
+        String color = driver.findElement(By.cssSelector("div#double-click.dbl")).getCssValue("background-color");
+        Assertions.assertEquals("rgba(245, 93, 122, 1)", color, "Color is different than asserted");
+    }
+    @Test
+    public void gestureTest3(){
+        WebElement inputField = driver.findElement(By.cssSelector("#input"));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", inputField);
+        WebElement confirmButton = driver.findElement(By.cssSelector("[onclick='zatwierdzTekst()']"));
+        String testMessage = "coronavirus";
+        actions.click(inputField).sendKeys(testMessage).click(confirmButton).build().perform();
+        String outputMessage = driver.findElement(By.cssSelector("#output")).getText();
+        Assertions.assertEquals("Wprowadzony tekst: " + testMessage, outputMessage, "Text enetered in field above is not correct");
+    }
+    @Test
+    public void gesturTest4(){
+        List<WebElement> numberButtons = driver.findElements(By.cssSelector("#selectable.ui-selectable>li"));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", numberButtons.get(0));
+        actions.keyDown(Keys.LEFT_CONTROL).click(numberButtons.get(0)).click(numberButtons.get(4)).click(numberButtons.get(6))
+                .keyUp(Keys.LEFT_CONTROL).build().perform();
+        List<WebElement> buttonsSelected = driver.findElements(By.cssSelector("li.ui-selected"));
+        Assertions.assertTrue(buttonsSelected.size()==3, "Required buttons are not selected");
+        System.out.println(buttonsSelected.size());
+    }
+}
