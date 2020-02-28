@@ -1,0 +1,51 @@
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import java.io.Console;
+import java.util.concurrent.TimeUnit;
+
+public class Selenium_51_Zadanie_ListyRozwijane {
+    WebDriver driver;
+    String URL ="https://fakestore.testelka.pl/";
+    WebDriverWait wait;
+
+    @BeforeEach
+    public void driverSetup() {
+        System.setProperty("webdriver.chrome.driver", "src/main/resources/chromedriver.exe");
+        driver = new ChromeDriver();
+        driver.manage().window().maximize();
+        driver.navigate().to(URL);
+        driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+        wait = new WebDriverWait(driver, 5);
+        driver.findElement(By.cssSelector("#menu-item-198")).click();
+        driver.findElement(By.cssSelector("[alt='Windsurfing']")).click();
+    }
+    @AfterEach
+    public void driverQuit(){
+        driver.close();
+        driver.quit();
+    }
+    @Test
+    public void sortByPrizeAscending(){
+        WebElement productSorting =  driver.findElements(By.cssSelector(".orderby")).get(0);
+        Select sortingDropdown = new Select(productSorting);
+        sortingDropdown.selectByValue("price");
+        WebElement price = driver.findElements(By.cssSelector("span.price")).get(0);
+        Assertions.assertEquals("2 900,00 zł", price.getText(), "Price is not correct");
+    }
+    @Test
+    public void sortByPriceDescending(){
+        WebElement productSorting =  driver.findElements(By.cssSelector(".orderby")).get(0);
+        Select sortingDropdown = new Select(productSorting);
+        sortingDropdown.selectByValue("price-desc");
+        String price = driver.findElement(By.cssSelector("main#main>ul.columns-3>:first-child span.woocommerce-Price-amount")).getText();
+        Assertions.assertEquals("5 399,00 zł", price, "Price is not correct");
+    }
+}
