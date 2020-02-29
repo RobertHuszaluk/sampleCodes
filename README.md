@@ -1,2 +1,0 @@
-# sampleCodes
-Selenium Sample Codes
