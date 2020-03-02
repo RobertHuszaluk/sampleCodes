@@ -1,0 +1,114 @@
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.Point;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.sql.DriverManager;
+import java.util.concurrent.TimeUnit;
+
+public class Selenium_39_zadanie_CzekanieNaWarunki {
+    WebDriver driver;
+    String URL = "https://fakestore.testelka.pl/moje-konto/";
+    WebDriverWait wait;
+    String userName = "test@wp.pl";
+    String password = "12wedfvb<>lopoda";
+    String coupon = "10procent";
+    String incorectCoupon = "20procent";
+
+    @BeforeEach
+    public void driverSetup(){
+        System.setProperty("webdriver.chrome.driver","src/main/resources/chromedriver.exe");
+        driver = new ChromeDriver();
+        driver.manage().window().setSize(new Dimension(1300, 800));
+        driver.manage().window().setPosition(new Point(4,30));
+        driver.manage().timeouts().pageLoadTimeout(20, TimeUnit.SECONDS);
+        driver.navigate().to(URL);
+        wait = new WebDriverWait(driver, 10);
+        logInShop(userName, password);
+        addToCart();
+    }
+
+    @AfterEach
+    public void driverQuit(){
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[class='remove']"))).click();
+        waitForProcessingEnd();
+        driver.close();
+        driver.quit();
+    }
+
+    @Test
+    public void correctCouponTest(){
+        applyCoupon(coupon);
+        waitForProcessingEnd();
+        Assertions.assertEquals("Kupon został pomyślnie użyty.",getActualMessage(), "Displayed confirmation is incorrect");
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a.woocommerce-remove-coupon"))).click();
+    }
+    @Test
+    public void incorrectCouponTest(){
+        applyCoupon(incorectCoupon);
+        waitForProcessingEnd();
+        Assertions.assertEquals( "Kupon \"" + incorectCoupon + "\" nie istnieje!",getActualMessage(), "Displayed confirmation is incorrect");
+    }
+    @Test
+    public void emptyCouponTest(){
+        applyCoupon("");
+        waitForProcessingEnd();
+        Assertions.assertEquals("Proszę wpisać kod kuponu.",getActualMessage(), "Displayed confirmation is incorrect");
+    }
+    @Test
+    public void removeCouponTest(){
+        applyCoupon(coupon);
+        waitForProcessingEnd();
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a.woocommerce-remove-coupon"))).click();
+        waitForProcessingEnd();
+        Assertions.assertEquals( "Kupon został usunięty.",getActualMessage(), "Displayed confirmation is incorrect");
+    }
+    @Test
+    public void addingCouponTwiceTest(){
+        applyCoupon(coupon);
+        waitForProcessingEnd();
+        applyCoupon(coupon);
+        waitForProcessingEnd();
+        Assertions.assertEquals( "Kupon został zastosowany!",getActualMessage(), "Displayed confirmation is incorrect");
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a.woocommerce-remove-coupon"))).click();
+    }
+
+
+
+    private void logInShop (String userName, String password){
+        driver.findElement(By.cssSelector("input#username")).sendKeys(userName);
+        driver.findElement(By.cssSelector("input#password")).sendKeys(password);
+        driver.findElement(By.cssSelector("a[class='woocommerce-store-notice__dismiss-link']")).click();
+        driver.findElement(By.cssSelector("button[name='login']")).click();
+    }
+    private void addToCart(){
+        driver.findElement(By.cssSelector("li#menu-item-198>a[href='https://fakestore.testelka.pl/shop/']")).click();
+        driver.findElement(By.cssSelector("li.cat-item>a[href='https://fakestore.testelka.pl/product-category/wspinaczka/']")).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[href='?add-to-cart=42']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[class='added_to_cart wc-forward']"))).click();
+    }
+    private void applyCoupon(String coupon){
+        driver.findElement(By.cssSelector("input#coupon_code")).sendKeys(coupon);
+        driver.findElement(By.cssSelector("button[name='apply_coupon']")).click();
+    }
+    private String getActualMessage() {
+        return wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("*[role='alert']"))).getText();
+    }
+    private void removeItemFromCart(){
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[class='woocommerce-remove-coupon']"))).click();
+        wait.until(ExpectedConditions.elementToBeClickable(By.cssSelector("a[class='remove']"))).click();
+    }
+    private void waitForProcessingEnd(){
+        By blockedUI = By.cssSelector("div.blockUI");
+        wait.until(ExpectedConditions.numberOfElementsToBeMoreThan(blockedUI, 0));
+        wait.until(ExpectedConditions.numberOfElementsToBe(blockedUI,0));
+    }
+}
